@@ -1,83 +1,71 @@
 package com.example.test;
 
+import java.io.File;
+import java.util.TimerTask;
+
 import android.content.Context;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.telephony.SmsManager;
-import android.text.format.Time;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.Environment;
 import android.util.Log;
 
-public class AlarmTimerTask extends java.util.TimerTask{
+public class AlarmTimerTask extends TimerTask {
 
-	public static DatabaseHelper mOpenHelper;
-	public static final String DATABASE_NAME = "dbForTest.db";
+	public static final String DATABASE_NAME = "Hui.db";
 	public static final int DATABASE_VERSION = 1;
-	public static final String TABLE_NAME = "diary";
-	public static final String TITLE = "title";
-	public static final String BODY = "body";
-	
-	private static class DatabaseHelper extends SQLiteOpenHelper {
-		DatabaseHelper(Context context) {
-			super(context, DATABASE_NAME, null, DATABASE_VERSION);
-		}
+	public static final String TABLE_NAME = "HuiTable";
+	public static final String TITLE = "Latitude";
+	public static final String BODY = "Longitude";
+	private Context mContext;
+	public LocationTimerTask(Context mContext) {
+	       this.mContext = mContext;
+	 }
 
-		@Override
-		public void onCreate(SQLiteDatabase db) {
-
-			String sql = "CREATE TABLE  if not exists " + TABLE_NAME + " (" + TITLE
-					+ " text not null, " + BODY + " text not null, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP " + ");";
-			
-			db.execSQL(sql);
-
-		}
-
-		@Override
-		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		}
-	}
-
-	private static void insertItem() {
-		if(mOpenHelper == null)
-			mOpenHelper = new DatabaseHelper(null);
-		
-		SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-		String sql = "insert into " + TABLE_NAME + " (" + TITLE + ", " + BODY
-				+ ") values('this is title', 'this is body');";
- 
-		try {
-	 
-			db.execSQL(sql);
- 
-			 
-		} catch (SQLException e) 
-		{
-			 Log.i("", "");
-		}
-	}
- 
-	
 	@Override
 	public void run() {
 		
 		try {
-		SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase("/mnt/sdcard/books/" + DATABASE_NAME, null); 
-		String sql = "CREATE TABLE  if not exists " + TABLE_NAME + " (" + TITLE
-				+ " text not null, " + BODY + " text not null, Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP " + ");";
-		
-		db.execSQL(sql); 
-		sql = "insert into " + TABLE_NAME + " (" + TITLE + ", " + BODY
-				+ ") values('this is title', 'this is body');";
-		db.execSQL(sql); 
-		db.close();
-		Log.i("", "");
-		//insertItem();
+			String path = Environment.getExternalStorageDirectory().getPath() + "/Hui/";
+			File dir = new File(path);
+			if(dir.exists() == false)
+				dir.mkdir();
+			SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(path + DATABASE_NAME, null); 
+			String sql = "CREATE TABLE  if not exists " + TABLE_NAME + " (" + TITLE
+					+ " text not null, " + BODY + " text not null, Timestamp DATETIME DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')) " + ");";
+			
+			db.execSQL(sql); 
+			Location loc = this.getLocation();
+			if(loc != null)
+			{
+				sql = "insert into " + TABLE_NAME + " (" + TITLE + ", " + BODY
+						+ ") values('" + loc.getLatitude() + "', '" + loc.getLongitude() + "');";
+				db.execSQL(sql); 
+			}
+			db.close();
+ 
 		}
 		catch(Exception e)
 		{
-			Log.i("", "");
+			Log.i("LocationTimerTask", e.toString());
 		}
 
 	}  
+	
+	public Location getLocation() {
+	    LocationManager locationManager = (LocationManager) this.mContext.getSystemService(Context.LOCATION_SERVICE);        
+	    if (locationManager != null) {          
+	        Location lastKnownLocationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+	        if (lastKnownLocationGPS != null) {             
+	            return lastKnownLocationGPS;
+	        } else {                
+	            Location loc =  locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+	            return loc;
+	        }
+	    } else {            
+	        return null;
+	    }
+	}
 
 }
+
