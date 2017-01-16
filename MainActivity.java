@@ -56,5 +56,16 @@ public class MainActivity extends Activity {
 		return false;
 	}
     
+	private void initAlarm(){
+		AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
+		PendingIntent piIntent = PendingIntent.getBroadcast(getApplication(), 0, new Intent(this, AlarmReceiver.class), Intent.FLAG_ACTIVITY_NEW_TASK);
+
+		Time time = new Time();
+		time.setToNow();
+		Time alarmTime = new Time();
+		alarmTime.set(System.currentTimeMillis());
+		am.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime.toMillis(true), 5*60*1000, piIntent);
+		//am.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime.toMillis(true), 5000, piIntent);
+	}
 
 }
